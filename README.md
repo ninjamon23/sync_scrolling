@@ -1,6 +1,6 @@
 # sync_scrolling
 
-A new Flutter project.
+Flutter demo project on sync scrolling.
 
 ## Getting Started
 
