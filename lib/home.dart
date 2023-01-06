@@ -1,16 +1,19 @@
+import 'package:dy_app/_utils.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:jiffy/jiffy.dart';
 import 'package:linked_scroll_controller/linked_scroll_controller.dart';
-import 'package:timeline_tile/timeline_tile.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+import '../shared/searchbar.dart';
+
+class DrillTimelineView extends StatefulWidget {
+  const DrillTimelineView();
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<DrillTimelineView> createState() => _DrillTimelineViewState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _DrillTimelineViewState extends State<DrillTimelineView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -25,16 +28,23 @@ class LinkedScrollables extends StatefulWidget {
 }
 
 class _LinkedScrollablesState extends State<LinkedScrollables> {
+  var dayList = [0, 4, 8, 12, 16, 20, 24, 28, 31];
   late LinkedScrollControllerGroup _controllers;
   late ScrollController _letters;
   late ScrollController _numbers;
   List<ScrollController> _scrollers = [];
+  DateTime currentMonth = DateTime.now().toUtc();
+  DateTime startMonth =
+      Jiffy(DateTime.now().toUtc()).add(months: -6).dateTime.toUtc();
+  List<DateTime> monthHeaders = [];
+
   @override
   void initState() {
     super.initState();
     _controllers = LinkedScrollControllerGroup();
     _letters = _controllers.addAndGet();
     _numbers = _controllers.addAndGet();
+    monthHeaders = getMonthHeaders();
   }
 
   @override
@@ -58,9 +68,12 @@ class _LinkedScrollablesState extends State<LinkedScrollables> {
                 child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                const Text(
-                  'Horizontal Only!',
-                  style: TextStyle(fontSize: 18),
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 20, horizontal: 50),
+                  child: SearchBar(onSearchApplied: (searchText) {
+                    log("searchText $searchText", this);
+                  }),
                 ),
                 Expanded(
                   flex: 2,
@@ -71,60 +84,63 @@ class _LinkedScrollablesState extends State<LinkedScrollables> {
                         controller: _letters,
                         shrinkWrap: true,
                         scrollDirection: Axis.horizontal,
-                        itemCount: 12,
-                        itemBuilder: (BuildContext context, int index) =>
-                            Container(
-                              margin: const EdgeInsets.all(8.0),
-                              padding: const EdgeInsets.all(8.0),
-                              height: 50.0,
-                              width: 300,
-                              color: Colors
-                                  .transparent, // Required for the divider to show
-                              child: Row(children: [
-                                Expanded(
-                                  flex: 2,
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    // crossAxisAlignment:
-                                    //     CrossAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        'Month $index',
-                                        textAlign: TextAlign.center,
-                                      ),
-                                      Icon(Icons.calendar_month),
-                                      Text(getTextDisplay(index))
-                                    ],
-                                  ),
+                        itemCount: monthHeaders.length,
+                        itemBuilder: (BuildContext context, int index) {
+                          var workingMonth = monthHeaders[index];
+                          // NOTE: Color is required for the divider to show
+                          return Container(
+                            margin: const EdgeInsets.all(8.0),
+                            padding: const EdgeInsets.all(8.0),
+                            height: 50.0,
+                            width: 240,
+                            color: Colors.transparent,
+                            // color: index == 6
+                            //     ? Colors.deepOrangeAccent
+                            //     : Colors.transparent,
+                            child: Row(children: [
+                              Expanded(
+                                flex: 2,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      workingMonth.toFormat('MMM yyyy') ?? '',
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    Icon(Icons.calendar_month),
+                                    Text(getTextDisplay(index))
+                                  ],
                                 ),
-                                Expanded(
-                                    flex: 8,
-                                    child: Divider(
-                                      height: 2,
-                                      color: Colors.black,
-                                    ))
-                              ]),
-                            )),
+                              ),
+                              Expanded(
+                                flex: 8,
+                                child: buildDrillLocation(-1, index),
+                              )
+                            ]),
+                          );
+                        }),
                   ),
                 ),
-                const Text(
-                  'Vertical>Horizontal',
-                  style: TextStyle(fontSize: 18),
-                ),
+                // const Text(
+                //   'Vertical>Horizontal',
+                //   style: TextStyle(fontSize: 18),
+                // ),
                 Expanded(
                   flex: 8,
                   child: ListView.builder(
                     shrinkWrap: true,
-                    itemCount: 20,
+                    itemCount: 9,
                     itemBuilder: (ctx, int index) {
                       _scrollers.add(_controllers.addAndGet());
+
+                      var sampleDay = 21 + index;
                       return Card(
                           // color: Colors.orangeAccent,
                           child: ListTile(
                         title: Text('Drill # - $index'),
                         subtitle: Container(
                           // change your height based on preference
-                          height: 80,
+                          height: 100,
                           width: double.infinity,
                           child: ListView(
                             padding: EdgeInsets.all(2),
@@ -134,18 +150,19 @@ class _LinkedScrollablesState extends State<LinkedScrollables> {
                             scrollDirection: Axis.horizontal,
                             children: <Widget>[
                               // add your widgets here
-                              buildDrillFrame(1, index),
-                              buildDrillFrame(1, index),
-                              buildDrillFrame(1, index),
-                              buildDrillFrame(1, index),
-                              buildDrillFrame(1, index),
-                              buildDrillFrame(1, index),
-                              buildDrillFrame(1, index),
-                              buildDrillFrame(1, index),
-                              buildDrillFrame(1, index),
-                              buildDrillFrame(1, index),
-                              buildDrillFrame(1, index),
-                              buildDrillFrame(1, index),
+                              buildDrillFrame(sampleDay, 0),
+                              buildDrillFrame(sampleDay, 1),
+                              buildDrillFrame(sampleDay, 2),
+                              buildDrillFrame(sampleDay, 3),
+                              buildDrillFrame(sampleDay, 4),
+                              buildDrillFrame(sampleDay, 5),
+                              // NOTE: This will be from loop, middle will always have a color indicator
+                              buildDrillFrame(sampleDay, 6),
+                              buildDrillFrame(sampleDay, 7),
+                              buildDrillFrame(sampleDay, 8),
+                              buildDrillFrame(sampleDay, 9),
+                              buildDrillFrame(sampleDay, 10),
+                              buildDrillFrame(sampleDay, 11),
                             ],
                           ),
                         ),
@@ -161,15 +178,25 @@ class _LinkedScrollablesState extends State<LinkedScrollables> {
     );
   }
 
+  getMonthHeaders() {
+    List<DateTime> listOfMonth = [];
+    for (var i = 0; i < 12; i++) {
+      var newMonth = Jiffy(startMonth).add(months: i).dateTime.toUtc();
+      listOfMonth.add(newMonth);
+    }
+
+    return listOfMonth;
+  }
+
   String getTextDisplay(int index) {
     var returnText = '';
     switch (index) {
       case 0:
         returnText = 'PAST';
         break;
-      case 5:
-        returnText = 'TODAY';
-        break;
+      // case 6:
+      //   returnText = 'TODAY';
+      //   break;
       case 11:
         returnText = 'FUTURE';
         break;
@@ -177,117 +204,91 @@ class _LinkedScrollablesState extends State<LinkedScrollables> {
     return returnText;
   }
 
-  Widget buildDrillFrame(int day, int index) {
+  Widget buildDrillFrame(int day, int index,
+      {Color color = Colors.transparent}) {
+    // NOTE: color is required for the divider to show
     return Container(
       margin: const EdgeInsets.all(8.0),
       padding: const EdgeInsets.all(8.0),
       // height: 400.0,
-      width: 300,
-      color: Colors.transparent, // Required for the divider to show
-      // color: Colors.orangeAccent,
-      child: buildDrillLocation(day + index),
+      width: 240,
+      color: color,
+      // color: Colors.transparent,
+      // color: index == 5 ? Colors.redAccent : Colors.transparent,
+      child: Row(
+        children: [
+          Expanded(
+              flex: 2,
+              child: VerticalDivider(
+                thickness: 1,
+                color: Colors.black,
+              )),
+          Expanded(flex: 8, child: buildDrillLocation(day, index)),
+        ],
+      ),
     );
   }
 
-  Widget buildDrillLocation(int day) {
-    var dayList = [0, 4, 8, 12, 16, 20, 24, 28, 31];
+  Widget buildDrillLocation(int day, int index) {
+    var mapIndex = -1;
     return Row(
       children: [
-        ...dayList.map((e) => Expanded(
-              child: Container(
+        ...dayList.map((e) {
+          mapIndex++;
+          print(mapIndex);
+          return Expanded(
+            child: Container(
                 child: day >= e && day <= (e + 3)
                     ? Padding(
-                        padding: const EdgeInsets.all(4),
+                        padding: const EdgeInsets.all(1),
                         child: CircleAvatar(
                           child: Text(
                             day.toString(),
                             textAlign: TextAlign.center,
                           ),
                         ),
-                        // child: Column(
-                        //   children: [
-                        //     CircleAvatar(
-                        //       child: Text(
-                        //         day.toString(),
-                        //         textAlign: TextAlign.center,
-                        //       ),
-                        //     ),
-                        //     Text('more info...')
-                        //   ],
-                        // )
                       )
-                    : const Divider(
-                        height: 2,
-                        color: Colors.black,
-                      ),
-              ),
-            ))
+                    : checkIfToday(index, e, mapIndex)
+                // currentMonth.day >= e &&
+                //         currentMonth.day <= (e + 3) &&
+                //         index == 6
+                //     ? const VerticalDivider(
+                //         // height: 2,
+                //         thickness: 1,
+                //         color: Colors.deepOrange,
+                //       )
+                //     : const Divider(
+                //         thickness: 1,
+                //         color: Colors.black,
+                //       ),
+                ),
+          );
+        })
       ],
     );
   }
-}
 
-class _Tile extends StatelessWidget {
-  final String caption;
-  final int? eventDay;
-  final String? topLabel;
-  List<int> days = [];
-  _Tile(this.caption, {this.eventDay, this.topLabel});
-
-  @override
-  Widget build(_) {
-    for (var i = 1; i <= 3; i++) {
-      days.add(i);
+  Widget checkIfToday(
+      int drillLocationIndex, int drillZone, int mapLocationIndex) {
+    if (mapLocationIndex != 6) {
+      return const Divider(
+        thickness: 1,
+        color: Colors.black,
+      );
     }
-    return Container(
-      margin: const EdgeInsets.all(8.0),
-      padding: const EdgeInsets.all(8.0),
-      height: 100.0,
-      width: 300,
-      color: Colors.greenAccent,
-      child: Center(
-          child:
-              // Text(caption)
-              Row(
-        children: [
-          Expanded(
-            flex: 1,
-            child: TimelineTile(
-              isFirst: true,
-              axis: TimelineAxis.horizontal,
-              alignment: TimelineAlign.center,
-              // endChild: Container(
-              //   constraints: const BoxConstraints(
-              //     minWidth: 120,
-              //   ),
-              //   color: Colors.lightGreenAccent,
-              // ),
-              startChild: Container(
-                color: Colors.amberAccent,
-                child: Text(topLabel ?? ''),
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 8,
-            child: TimelineTile(
-              hasIndicator: eventDay != null,
-              axis: TimelineAxis.horizontal,
-              alignment: TimelineAlign.center,
-              endChild: Container(
-                // width: 200,
-                constraints: const BoxConstraints(
-                  minWidth: 300,
-                ),
-                color: Colors.lightGreenAccent,
-              ),
-              startChild: Container(
-                color: Colors.amberAccent,
-              ),
-            ),
-          ),
-        ],
-      )),
+
+    if (currentMonth.day >= drillZone &&
+        currentMonth.day <= (drillZone + 3) &&
+        drillLocationIndex == 6) {
+      return const VerticalDivider(
+        // height: 2,
+        thickness: 1,
+        color: Colors.deepOrange,
+      );
+    }
+    return const Divider(
+      thickness: 1,
+      color: Colors.black,
     );
   }
 }
